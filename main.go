@@ -154,19 +154,19 @@ func run(ctx context.Context, log *zap.Logger) error {
 }
 
 func main() {
-	err := godotenv.Load()
+	logger, err := zap.NewDevelopment(zap.IncreaseLevel(zapcore.InfoLevel), zap.AddStacktrace(zapcore.FatalLevel))
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatalf("Failed to create logger: %s", err)
+	}
+
+	err = godotenv.Load()
+	if err != nil {
+		logger.Warn("Failed to load .env file", zap.Error(err))
 	}
 
 	err = cleanenv.ReadEnv(&cfg)
 	if err != nil {
-		log.Fatalf("Failed to read config.yml: %s", err)
-	}
-
-	logger, err := zap.NewDevelopment(zap.IncreaseLevel(zapcore.InfoLevel), zap.AddStacktrace(zapcore.FatalLevel))
-	if err != nil {
-		log.Fatalf("Failed to create logger: %s", err)
+		logger.Fatal("Failed to read environment variables", zap.Error(err))
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)

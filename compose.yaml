@@ -1,0 +1,15 @@
+services:
+  bot:
+    container_name: bot
+    build:
+      context: .
+      target: final
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - APP_HASH=${APP_HASH}
+      - APP_ID=${APP_ID}
+      - PHONE=${PHONE}
+      - PASSWORD=${PASSWORD}
+      - SESSION_FOLDER=/app/sessions
+    volumes:
+      - ./sessions:/app/sessions
