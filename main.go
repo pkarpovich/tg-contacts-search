@@ -1,24 +1,33 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"github.com/gotd/td/session"
 	"github.com/gotd/td/telegram"
+	"github.com/gotd/td/telegram/auth"
 	"github.com/gotd/td/telegram/message"
 	"github.com/gotd/td/tg"
 	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/joho/godotenv"
 	"github.com/nyaruka/phonenumbers"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"log"
 	"os"
 	"os/signal"
+	"path"
+	"strings"
 )
 
 type Config struct {
-	BotToken string `env:"BOT_TOKEN"`
-	AppHash  string `env:"APP_HASH"`
-	AppId    int    `env:"APP_ID"`
+	BotToken      string `env:"BOT_TOKEN"`
+	AppHash       string `env:"APP_HASH"`
+	AppId         int    `env:"APP_ID"`
+	Phone         string `env:"PHONE"`
+	Password      string `env:"PASSWORD"`
+	SessionFolder string `env:"SESSION_FOLDER" env-default:"./sessions"`
 }
 
 var cfg Config
@@ -50,10 +59,31 @@ func getUsername(client *tg.Client, phoneNum string) (string, error) {
 	return "", nil
 }
 
-func run(ctx context.Context, log *zap.Logger) error {
-	client := telegram.NewClient(cfg.AppId, cfg.AppHash, telegram.Options{})
+func codePrompt(ctx context.Context, sentCode *tg.AuthSentCode) (string, error) {
+	fmt.Print("Enter code: ")
+	code, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(code), nil
+}
 
-	return client.Run(ctx, func(ctx context.Context) error {
+func run(ctx context.Context, log *zap.Logger) error {
+	userClient := telegram.NewClient(cfg.AppId, cfg.AppHash, telegram.Options{
+		SessionStorage: &session.FileStorage{
+			Path: path.Join(cfg.SessionFolder, ".tg-session.json"),
+		},
+	})
+	flow := auth.NewFlow(
+		auth.Constant(cfg.Phone, cfg.Password, auth.CodeAuthenticatorFunc(codePrompt)),
+		auth.SendCodeOptions{},
+	)
+
+	return userClient.Run(ctx, func(ctx context.Context) error {
+		if err := userClient.Auth().IfNecessary(ctx, flow); err != nil {
+			return fmt.Errorf("auth: %w", err)
+		}
+
 		updates := tg.NewUpdateDispatcher()
 		opts := telegram.Options{
 			UpdateHandler: updates,
@@ -63,7 +93,6 @@ func run(ctx context.Context, log *zap.Logger) error {
 		log.Info("Starting bot")
 
 		return telegram.BotFromEnvironment(ctx, opts, func(ctx context.Context, client *telegram.Client) error {
-			api := tg.NewClient(client)
 			sender := message.NewSender(tg.NewClient(client))
 
 			updates.OnNewMessage(func(ctx context.Context, entities tg.Entities, u *tg.UpdateNewMessage) error {
@@ -91,7 +120,7 @@ func run(ctx context.Context, log *zap.Logger) error {
 					return nil
 				}
 
-				username, err := getUsername(api, msg.Message)
+				username, err := getUsername(userClient.API(), msg.Message)
 				if err != nil {
 					_, err := sender.Reply(entities, u).Text(ctx, fmt.Sprintf("Failed to get username: %s", err))
 					if err != nil {
@@ -125,7 +154,12 @@ func run(ctx context.Context, log *zap.Logger) error {
 }
 
 func main() {
-	err := cleanenv.ReadEnv(&cfg)
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	err = cleanenv.ReadEnv(&cfg)
 	if err != nil {
 		log.Fatalf("Failed to read config.yml: %s", err)
 	}
