@@ -102,7 +102,16 @@ func run(ctx context.Context, log *zap.Logger) error {
 				}
 				log.Info("Message", zap.Any("message", u.Message))
 
-				if msg.Message == "ping" {
+				if msg.Message == "/start" {
+					_, err := sender.Reply(entities, u).Text(ctx, "Welcome to the contacts search bot! Send me a phone number to get the username of the user.")
+					if err != nil {
+						log.Error("failed to send message", zap.Error(err))
+					}
+
+					return nil
+				}
+
+				if msg.Message == "/ping" {
 					_, err := sender.Reply(entities, u).Text(ctx, "pong")
 					if err != nil {
 						log.Error("failed to send message", zap.Error(err))
