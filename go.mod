@@ -3,11 +3,13 @@ module github.com/pkarpovich/tg-contacts-search
 go 1.22
 
 require (
+	github.com/gotd/contrib v0.19.0
 	github.com/gotd/td v0.99.1
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/joho/godotenv v1.5.1
 	github.com/nyaruka/phonenumbers v1.3.4
 	go.uber.org/zap v1.27.0
+	golang.org/x/time v0.3.0
 )
 
 require (

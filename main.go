@@ -11,30 +11,19 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"sync"
 )
 
 func run(ctx context.Context, cfg config.Config, log *zap.Logger) error {
-	var wg sync.WaitGroup
 	listener := telegram.NewListener(log, cfg)
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := listener.StartUserClient(ctx); err != nil {
-			log.Error("Failed to start user client", zap.Error(err))
-		}
-	}()
+	if err := listener.StartUserClient(); err != nil {
+		log.Error("Failed to start user client", zap.Error(err))
+	}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := listener.StartBotClient(ctx); err != nil {
-			log.Error("Failed to start bot client", zap.Error(err))
-		}
-	}()
+	if err := listener.StartBotClient(ctx); err != nil {
+		log.Error("Failed to start bot client", zap.Error(err))
+	}
 
-	wg.Wait()
 	return nil
 }
 

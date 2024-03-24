@@ -30,6 +30,7 @@ func (tl *Listener) StartBotClient(ctx context.Context) error {
 			}
 		}
 
+		botUpdates.OnNewMessage(tl.handleNewBotMessage)
 		tl.Logger.Info("Bot started successfully.")
 		return telegram.RunUntilCanceled(ctx, tl.BotClient)
 	})

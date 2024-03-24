@@ -7,10 +7,9 @@ import (
 )
 
 type Listener struct {
-	UserClient *telegram.Client
-	BotClient  *telegram.Client
-	Logger     *zap.Logger
-	Config     config.Config
+	BotClient *telegram.Client
+	Logger    *zap.Logger
+	Config    config.Config
 }
 
 func NewListener(logger *zap.Logger, config config.Config) *Listener {
