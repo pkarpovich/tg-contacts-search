@@ -5,14 +5,15 @@ import (
 	"context"
 	"fmt"
 	"github.com/gotd/contrib/bg"
-	"github.com/gotd/td/session"
 	"github.com/gotd/td/telegram"
 	"github.com/gotd/td/telegram/auth"
+	"github.com/gotd/td/telegram/updates"
 	"github.com/gotd/td/tg"
 	"go.uber.org/zap"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
+	"time"
 )
 
 func codePrompt(ctx context.Context, sentCode *tg.AuthSentCode) (string, error) {
@@ -36,12 +37,20 @@ func deviceConfig() telegram.DeviceConfig {
 }
 
 func (tl *Listener) NewUserClient() *telegram.Client {
+	dispatcher := tg.NewUpdateDispatcher()
+	manager := updates.New(updates.Config{
+		Handler: dispatcher,
+	})
+
 	return telegram.NewClient(tl.Config.AppId, tl.Config.AppHash, telegram.Options{
-		SessionStorage: &session.FileStorage{
-			Path: path.Join(tl.Config.SessionFolder, ".tg-user-session.json"),
+		SessionStorage: &telegram.FileSessionStorage{
+			Path: filepath.Join(tl.Config.SessionFolder, ".tg-user-session.json"),
 		},
-		Device: deviceConfig(),
-		Logger: tl.Logger,
+		DialTimeout:   time.Minute * 5,
+		Device:        deviceConfig(),
+		Logger:        tl.Logger,
+		UpdateHandler: manager,
+		DC:            5,
 	})
 }
 
