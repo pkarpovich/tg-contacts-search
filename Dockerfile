@@ -11,10 +11,17 @@ ARG TARGETARCH
 
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=bind,target=. \
-    CGO_ENABLED=0 GOARCH=$TARGETARCH go build -o /bin/bot .
-
+    CGO_ENABLED=0 GOARCH=$TARGETARCH go build -o /bin/server ./app
 
 FROM alpine:latest AS final
 
-COPY --from=build /bin/bot /bin/
-ENTRYPOINT [ "/bin/bot" ]
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk --update add \
+        ca-certificates \
+        tzdata \
+        && \
+        update-ca-certificates
+
+COPY --from=build /bin/server /bin/
+
+ENTRYPOINT [ "/bin/server" ]

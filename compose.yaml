@@ -11,5 +11,6 @@ services:
       - PHONE=${PHONE}
       - PASSWORD=${PASSWORD}
       - SESSION_FOLDER=/app/sessions
+    restart: unless-stopped
     volumes:
       - ./sessions:/app/sessions
