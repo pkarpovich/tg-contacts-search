@@ -2,7 +2,7 @@ package telegram
 
 import (
 	"github.com/gotd/td/telegram"
-	"github.com/pkarpovich/tg-contacts-search/config"
+	"github.com/pkarpovich/tg-contacts-search/app/config"
 	"go.uber.org/zap"
 )
 
