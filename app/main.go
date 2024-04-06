@@ -2,10 +2,9 @@ package main
 
 import (
 	"context"
-	"github.com/ilyakaznacheev/cleanenv"
-	"github.com/joho/godotenv"
 	"github.com/pkarpovich/tg-contacts-search/app/config"
-	"github.com/pkarpovich/tg-contacts-search/app/telegram"
+	"github.com/pkarpovich/tg-contacts-search/app/telegram/bot"
+	"github.com/pkarpovich/tg-contacts-search/app/telegram/user"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"log"
@@ -13,15 +12,15 @@ import (
 	"os/signal"
 )
 
-func run(ctx context.Context, cfg config.Config, log *zap.Logger) error {
-	listener := telegram.NewListener(log, cfg)
-
-	if err := listener.StartUserClient(); err != nil {
-		log.Error("Failed to start user client", zap.Error(err))
+func run(ctx context.Context, cfg *config.Config, logger *zap.Logger) error {
+	if err := user.CheckAuthState(logger, cfg.Telegram); err != nil {
+		logger.Error("Failed to check auth state", zap.Error(err))
+		return err
 	}
 
-	if err := listener.StartBotClient(ctx); err != nil {
-		log.Error("Failed to start bot client", zap.Error(err))
+	if err := bot.NewClient(logger, cfg.Telegram).Listen(); err != nil {
+		logger.Error("Failed to start bot client", zap.Error(err))
+		return err
 	}
 
 	return nil
@@ -33,15 +32,9 @@ func main() {
 		log.Fatalf("Failed to create logger: %s", err)
 	}
 
-	err = godotenv.Load()
+	cfg, err := config.Init()
 	if err != nil {
-		logger.Warn("Failed to load .env file", zap.Error(err))
-	}
-
-	var cfg config.Config
-	err = cleanenv.ReadEnv(&cfg)
-	if err != nil {
-		logger.Fatal("Failed to read environment variables", zap.Error(err))
+		log.Fatalf("Failed to read config: %s", err)
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
