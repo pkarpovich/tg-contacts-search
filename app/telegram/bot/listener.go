@@ -45,6 +45,10 @@ func (c *Client) handleNewMessage(ctx context.Context, entities tg.Entities, u *
 		return c.handleStartCommand(msgContext)
 	}
 
+	if msg.Message == "/reset_cache" {
+		return c.handleResetCacheCommand(msgContext)
+	}
+
 	if msg.Message == "/ping" {
 		return c.handlePingCommand(msgContext)
 	}

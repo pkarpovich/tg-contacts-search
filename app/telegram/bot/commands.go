@@ -8,6 +8,7 @@ import (
 	"github.com/pkarpovich/tg-contacts-search/app/telegram/user"
 	"github.com/pkarpovich/tg-contacts-search/app/utils"
 	"go.uber.org/zap"
+	"sync"
 )
 
 func (c *Client) handleStartCommand(msgContext *MessageCtx) error {
@@ -54,6 +55,23 @@ func (c *Client) handlePingCommand(msgContext *MessageCtx) error {
 	}
 
 	_, err = sender.Reply(entities, u).Text(ctx, "pong")
+	if err != nil {
+		c.logger.Error("failed to send message", zap.Error(err))
+	}
+
+	return nil
+}
+
+func (c *Client) handleResetCacheCommand(msgContext *MessageCtx) error {
+	entities := msgContext.entities
+	ctx := context.Background()
+	u := msgContext.u
+
+	sender := message.NewSender(tg.NewClient(c.client))
+
+	c.usernameCache = sync.Map{}
+
+	_, err := sender.Reply(entities, u).Text(ctx, "Cache has been reset")
 	if err != nil {
 		c.logger.Error("failed to send message", zap.Error(err))
 	}
