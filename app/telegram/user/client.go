@@ -31,7 +31,6 @@ func NewClient(logger *zap.Logger, cfg config.TelegramConfig) (*Client, bg.StopF
 		},
 		DialTimeout:   time.Minute * 5,
 		Device:        deviceConfig(),
-		Logger:        logger,
 		UpdateHandler: manager,
 		DC:            5,
 	})

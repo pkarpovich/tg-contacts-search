@@ -70,7 +70,20 @@ func (c *Client) processPhoneNum(msgContext *MessageCtx) error {
 	ctx := context.Background()
 
 	if !utils.ValidatePhoneNum(msg) {
+		c.logger.Info("Invalid phone number received", zap.String("phoneNum", msg))
+
 		_, err := sender.Reply(entities, u).Text(ctx, "Invalid phone number")
+		if err != nil {
+			c.logger.Error("failed to send message", zap.Error(err))
+		}
+
+		return nil
+	}
+
+	if username, found := c.usernameCache.Load(msg); found {
+		c.logger.Info("Username found in cache", zap.String("username", username.(string)), zap.String("phone", msg))
+
+		_, err := sender.Reply(entities, u).Text(ctx, c.formatUsernameUrl(username.(string)))
 		if err != nil {
 			c.logger.Error("failed to send message", zap.Error(err))
 		}
@@ -100,6 +113,8 @@ func (c *Client) processPhoneNum(msgContext *MessageCtx) error {
 	}
 
 	if username == "" {
+		c.logger.Info("Username not found", zap.String("phone", msg))
+
 		_, err := sender.Reply(entities, u).Text(ctx, "User not found")
 		if err != nil {
 			c.logger.Error("failed to send message", zap.Error(err))
@@ -108,11 +123,18 @@ func (c *Client) processPhoneNum(msgContext *MessageCtx) error {
 		return nil
 	}
 
-	_, err = sender.Reply(entities, u).Text(ctx, fmt.Sprintf("https://t.me/%s", username))
+	c.usernameCache.Store(msg, username)
+	c.logger.Info("Username found", zap.String("username", username), zap.String("phone", msg))
+
+	_, err = sender.Reply(entities, u).Text(ctx, c.formatUsernameUrl(username))
 	if err != nil {
 		c.logger.Error("failed to send message", zap.Error(err))
 		return nil
 	}
 
 	return nil
+}
+
+func (c *Client) formatUsernameUrl(username string) string {
+	return fmt.Sprintf("https://t.me/%s", username)
 }

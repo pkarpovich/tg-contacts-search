@@ -8,14 +8,16 @@ import (
 	"github.com/pkarpovich/tg-contacts-search/app/config"
 	"go.uber.org/zap"
 	"path"
+	"sync"
 )
 
 type Client struct {
-	client  *telegram.Client
-	auth    *auth.Client
-	updates tg.UpdateDispatcher
-	logger  *zap.Logger
-	cfg     config.TelegramConfig
+	client        *telegram.Client
+	auth          *auth.Client
+	updates       tg.UpdateDispatcher
+	logger        *zap.Logger
+	cfg           config.TelegramConfig
+	usernameCache sync.Map
 }
 
 func NewClient(logger *zap.Logger, cfg config.TelegramConfig) *Client {
@@ -25,8 +27,7 @@ func NewClient(logger *zap.Logger, cfg config.TelegramConfig) *Client {
 			Path: path.Join(cfg.SessionFolder, ".tg-bot-session.json"),
 		},
 		UpdateHandler: updates,
-		Logger:        logger,
 	})
 
-	return &Client{client, client.Auth(), updates, logger, cfg}
+	return &Client{client, client.Auth(), updates, logger, cfg, sync.Map{}}
 }
