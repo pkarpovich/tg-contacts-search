@@ -13,8 +13,8 @@ type MessageCtx struct {
 	entities tg.Entities
 }
 
-func (c *Client) Listen() error {
-	return c.client.Run(context.Background(), func(ctx context.Context) error {
+func (c *Client) Listen(ctx context.Context) error {
+	return c.client.Run(ctx, func(ctx context.Context) error {
 		status, err := c.auth.Status(ctx)
 		if err != nil {
 			return err

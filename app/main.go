@@ -18,7 +18,7 @@ func run(ctx context.Context, cfg *config.Config, logger *zap.Logger) error {
 		return err
 	}
 
-	if err := bot.NewClient(logger, cfg.Telegram).Listen(); err != nil {
+	if err := bot.NewClient(logger, cfg.Telegram).Listen(ctx); err != nil {
 		logger.Error("Failed to start bot client", zap.Error(err))
 		return err
 	}
