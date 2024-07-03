@@ -1,6 +1,6 @@
 services:
   bot:
-    container_name: bot
+    container_name: tg-contacts-search-bot
     build:
       context: .
       target: final
